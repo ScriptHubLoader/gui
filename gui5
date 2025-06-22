@@ -1,0 +1,247 @@
+-- Dark Pastel Themed GUI with Smooth Tab Transitions
+-- Load Spawner
+local Spawner = loadstring(game:HttpGet("https://raw.githubusercontent.com/DeltaGay/femboy/refs/heads/main/GardenSpawner.lua"))()
+local UIS = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
+local player = game.Players.LocalPlayer
+
+-- GUI Setup
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "DarkPastelSpawnerUI"
+gui.ResetOnSpawn = false
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 360, 0, 400)
+frame.Position = UDim2.new(0.5, -180, 0.5, -200)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+frame.Active = true
+frame.Draggable = true
+Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 10)
+
+local title = Instance.new("TextLabel", frame)
+title.Text = "🌌 Garden Spawner"
+title.Size = UDim2.new(1, -40, 0, 30)
+title.Position = UDim2.new(0, 10, 0, 5)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.fromRGB(200, 200, 255)
+title.TextSize = 18
+title.Font = Enum.Font.GothamBold
+title.TextXAlignment = Enum.TextXAlignment.Left
+
+local minimize = Instance.new("TextButton", frame)
+minimize.Size = UDim2.new(0, 25, 0, 25)
+minimize.Position = UDim2.new(1, -35, 0, 7)
+minimize.Text = "-"
+minimize.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
+minimize.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimize.Font = Enum.Font.GothamBold
+minimize.TextSize = 14
+Instance.new("UICorner", minimize).CornerRadius = UDim.new(0, 4)
+
+local tabBar = Instance.new("Frame", frame)
+tabBar.Size = UDim2.new(1, -20, 0, 30)
+tabBar.Position = UDim2.new(0, 10, 0, 40)
+tabBar.BackgroundTransparency = 1
+
+local tabs = {}
+local sections = {}
+local currentTab = nil
+
+local function switchTab(tabName)
+	for name, sec in pairs(sections) do
+		if name == tabName then
+			sec.Visible = true
+			TweenService:Create(sec, TweenInfo.new(0.3), {BackgroundTransparency = 0}):Play()
+		else
+			sec.Visible = false
+		end
+	end
+	currentTab = tabName
+end
+
+local function createTab(name, index)
+	local btn = Instance.new("TextButton", tabBar)
+	btn.Size = UDim2.new(0.31, 0, 1, 0)
+	btn.Position = UDim2.new(0.33 * (index - 1), index > 1 and 5 or 0, 0, 0)
+	btn.Text = name
+	btn.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+	btn.TextColor3 = Color3.fromRGB(230, 230, 255)
+	btn.Font = Enum.Font.GothamBold
+	btn.TextSize = 14
+	Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 4)
+	tabs[name] = btn
+	btn.MouseButton1Click:Connect(function() switchTab(name) end)
+end
+
+local function createSection(name)
+	local sec = Instance.new("Frame", frame)
+	sec.Size = UDim2.new(1, -20, 1, -130)
+	sec.Position = UDim2.new(0, 10, 0, 80)
+	sec.BackgroundTransparency = 1
+	sec.Visible = false
+	sections[name] = sec
+	return sec
+end
+
+-- Create Tabs
+createTab("Pets", 1)
+createTab("Seeds", 2)
+createTab("Eggs", 3)
+
+local petSec = createSection("Pets")
+local seedSec = createSection("Seeds")
+local eggSec = createSection("Eggs")
+
+switchTab("Pets")
+
+-- UI Helpers
+local function createDropdown(parent, labelText, options, onSelect)
+	local label = Instance.new("TextLabel", parent)
+	label.Text = labelText
+	label.Size = UDim2.new(1, 0, 0, 20)
+	label.Position = UDim2.new(0, 0, 0, 0)
+	label.BackgroundTransparency = 1
+	label.TextColor3 = Color3.fromRGB(180, 180, 220)
+	label.Font = Enum.Font.Gotham
+	label.TextSize = 14
+
+	local dropdown = Instance.new("TextButton", parent)
+	dropdown.Size = UDim2.new(1, 0, 0, 25)
+	dropdown.Position = UDim2.new(0, 0, 0, 25)
+	dropdown.Text = "Select..."
+	dropdown.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
+	dropdown.TextColor3 = Color3.fromRGB(255, 255, 255)
+	dropdown.Font = Enum.Font.Gotham
+	dropdown.TextSize = 14
+	Instance.new("UICorner", dropdown).CornerRadius = UDim.new(0, 5)
+
+	local isOpen = false
+	dropdown.MouseButton1Click:Connect(function()
+		if isOpen then return end
+		isOpen = true
+		local list = Instance.new("Frame", dropdown)
+		list.Size = UDim2.new(1, 0, 0, #options * 25)
+		list.Position = UDim2.new(0, 0, 1, 0)
+		list.BackgroundColor3 = Color3.fromRGB(40, 40, 60)
+		list.ZIndex = 10
+		for i, opt in ipairs(options) do
+			local item = Instance.new("TextButton", list)
+			item.Size = UDim2.new(1, 0, 0, 25)
+			item.Position = UDim2.new(0, 0, 0, (i-1)*25)
+			item.Text = opt
+			item.BackgroundTransparency = 1
+			item.TextColor3 = Color3.fromRGB(255, 255, 255)
+			item.Font = Enum.Font.Gotham
+			item.TextSize = 14
+			item.MouseButton1Click:Connect(function()
+				dropdown.Text = opt
+				list:Destroy()
+				isOpen = false
+				onSelect(opt)
+			end)
+		end
+	end)
+end
+
+-- Pet Section Logic
+local selectedPet
+createDropdown(petSec, "Select Pet", Spawner.GetPets(), function(pet) selectedPet = pet end)
+
+local kgBox = Instance.new("TextBox", petSec)
+kgBox.PlaceholderText = "KG (e.g. 1)"
+kgBox.Size = UDim2.new(0.48, -5, 0, 25)
+kgBox.Position = UDim2.new(0, 0, 0, 55)
+kgBox.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+kgBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+kgBox.Font = Enum.Font.Gotham
+kgBox.TextSize = 14
+Instance.new("UICorner", kgBox).CornerRadius = UDim.new(0, 5)
+
+local ageBox = Instance.new("TextBox", petSec)
+ageBox.PlaceholderText = "Age (e.g. 2)"
+ageBox.Size = UDim2.new(0.48, -5, 0, 25)
+ageBox.Position = UDim2.new(0.52, 5, 0, 55)
+ageBox.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+ageBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+ageBox.Font = Enum.Font.Gotham
+ageBox.TextSize = 14
+Instance.new("UICorner", ageBox).CornerRadius = UDim.new(0, 5)
+
+local spawnPetBtn = Instance.new("TextButton", petSec)
+spawnPetBtn.Text = "Spawn Pet"
+spawnPetBtn.Size = UDim2.new(1, 0, 0, 30)
+spawnPetBtn.Position = UDim2.new(0, 0, 1, -40)
+spawnPetBtn.AnchorPoint = Vector2.new(0, 1)
+spawnPetBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 120)
+spawnPetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+spawnPetBtn.Font = Enum.Font.GothamBold
+spawnPetBtn.TextSize = 14
+Instance.new("UICorner", spawnPetBtn).CornerRadius = UDim.new(0, 5)
+spawnPetBtn.MouseButton1Click:Connect(function()
+	if selectedPet then
+		local kg = tonumber(kgBox.Text) or 1
+		local age = tonumber(ageBox.Text) or 2
+		Spawner.SpawnPet(selectedPet, kg, age)
+	end
+end)
+
+-- Seeds Section Logic
+local selectedSeed
+createDropdown(seedSec, "Select Seed", Spawner.GetSeeds(), function(seed) selectedSeed = seed end)
+
+local spawnSeedBtn = Instance.new("TextButton", seedSec)
+spawnSeedBtn.Text = "Spawn Seed"
+spawnSeedBtn.Size = UDim2.new(1, 0, 0, 30)
+spawnSeedBtn.Position = UDim2.new(0, 0, 1, -40)
+spawnSeedBtn.AnchorPoint = Vector2.new(0, 1)
+spawnSeedBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 120)
+spawnSeedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+spawnSeedBtn.Font = Enum.Font.GothamBold
+spawnSeedBtn.TextSize = 14
+Instance.new("UICorner", spawnSeedBtn).CornerRadius = UDim.new(0, 5)
+spawnSeedBtn.MouseButton1Click:Connect(function()
+	if selectedSeed then
+		Spawner.SpawnSeed(selectedSeed)
+	end
+end)
+
+-- Eggs Section Logic
+local selectedEgg = ""
+
+local eggInput = Instance.new("TextBox", eggSec)
+eggInput.PlaceholderText = "Enter Egg Name (e.g. Night Egg)"
+eggInput.Size = UDim2.new(1, 0, 0, 25)
+eggInput.Position = UDim2.new(0, 0, 0, 0)
+eggInput.BackgroundColor3 = Color3.fromRGB(60, 60, 80)
+eggInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+eggInput.Font = Enum.Font.Gotham
+eggInput.TextSize = 14
+Instance.new("UICorner", eggInput).CornerRadius = UDim.new(0, 5)
+eggInput.FocusLost:Connect(function() selectedEgg = eggInput.Text end)
+
+local spawnEggBtn = Instance.new("TextButton", eggSec)
+spawnEggBtn.Text = "Spawn Egg"
+spawnEggBtn.Size = UDim2.new(1, 0, 0, 30)
+spawnEggBtn.Position = UDim2.new(0, 0, 1, -40)
+spawnEggBtn.AnchorPoint = Vector2.new(0, 1)
+spawnEggBtn.BackgroundColor3 = Color3.fromRGB(90, 90, 120)
+spawnEggBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+spawnEggBtn.Font = Enum.Font.GothamBold
+spawnEggBtn.TextSize = 14
+Instance.new("UICorner", spawnEggBtn).CornerRadius = UDim.new(0, 5)
+spawnEggBtn.MouseButton1Click:Connect(function()
+	if selectedEgg ~= "" then
+		Spawner.SpawnEgg(selectedEgg)
+	end
+end)
+
+-- Signature Label
+local signature = Instance.new("TextLabel", frame)
+signature.Text = "Made by: pr1m0"
+signature.Position = UDim2.new(1, -140, 1, -25)
+signature.Size = UDim2.new(0, 130, 0, 20)
+signature.BackgroundTransparency = 1
+signature.TextColor3 = Color3.fromRGB(170, 170, 255)
+signature.Font = Enum.Font.Cartoon
+signature.TextSize = 14
+signature.TextXAlignment = Enum.TextXAlignment.Right
